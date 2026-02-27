@@ -45,7 +45,7 @@ export default {
       showOnlyWrite: false,
     };
   },
-  components: { VxeTable, VxeColumn, },
+  components: { VxeTable, VxeColumn },
   created() {
     this.$bus.$on('commandLog', (record) => {
       // hide ping
@@ -89,8 +89,8 @@ export default {
     },
     scrollToBottom() {
       setTimeout(() => {
-        this.$refs.commandLogList &&
-          this.$refs.commandLogList.scrollTo(0, 99999999);
+        this.$refs.commandLogList
+          && this.$refs.commandLogList.scrollTo(0, 99999999);
       }, 0);
     },
   },

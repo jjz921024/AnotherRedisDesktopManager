@@ -261,7 +261,7 @@ export default {
     filterDbCustomName(query) {
       query = query.toLocaleLowerCase();
 
-      this.dbsCopy = this.dbs.filter(dbIndex => {
+      this.dbsCopy = this.dbs.filter((dbIndex) => {
         if (`db${dbIndex}`.includes(query)) {
           return true;
         }

@@ -160,7 +160,9 @@ export default {
       consumersDict: {},
     };
   },
-  components: { FormatViewer, InputBinary, VxeTable, VxeColumn },
+  components: {
+    FormatViewer, InputBinary, VxeTable, VxeColumn,
+  },
   props: ['client', 'redisKey'],
   computed: {
     dialogTitle() {
@@ -177,7 +179,7 @@ export default {
           this.$refs.contentTable && this.$refs.contentTable.scrollTo(0, 99999999);
         }, 0);
       }
-    }
+    },
   },
   methods: {
     initShow(resetTable = true) {

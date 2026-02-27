@@ -140,7 +140,7 @@ export default {
           this.$refs.contentTable && this.$refs.contentTable.scrollTo(0, 99999999);
         }, 0);
       }
-    }
+    },
   },
   methods: {
     initShow(resetTable = true) {
@@ -176,7 +176,7 @@ export default {
       }
 
       const keys = hashData.map(line => line.key);
-      this.client.call('HTTL', this.redisKey, 'FIELDS', keys.length, ...keys).then(reply => {
+      this.client.call('HTTL', this.redisKey, 'FIELDS', keys.length, ...keys).then((reply) => {
         reply.forEach((ttl, index) => {
           this.hashData[startIndex + index].ttl = parseInt(ttl);
         });
@@ -200,7 +200,7 @@ export default {
             // keyDisplay: this.$util.bufToString(reply[i]),
             value: reply[i + 1],
             // valueDisplay: this.$util.bufToString(reply[i + 1]),
-            ttl: -1
+            ttl: -1,
           });
         }
 
@@ -277,13 +277,13 @@ export default {
 
         // set ttl if supportted
         if (this.ttlSupport && afterTTL > 0) {
-          this.client.call('HEXPIRE', key, afterTTL, "FIELDS", 1, afterKey);
+          this.client.call('HEXPIRE', key, afterTTL, 'FIELDS', 1, afterKey);
         }
 
         // this.initShow(); // do not reinit, #786
         const newLine = Object.assign(
           {}, before,
-          { key: afterKey, value: afterValue, ttl: afterTTL > 0 ? afterTTL : -1}
+          { key: afterKey, value: afterValue, ttl: afterTTL > 0 ? afterTTL : -1 },
         );
 
         // edit line

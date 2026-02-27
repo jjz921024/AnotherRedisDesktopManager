@@ -234,7 +234,7 @@ export default {
       return infos;
     },
     isCluster() {
-      return this.connectionStatus['cluster_enabled'] == '1';
+      return this.connectionStatus.cluster_enabled == '1';
     },
   },
   methods: {
@@ -242,13 +242,12 @@ export default {
       this.client.info().then((reply) => {
         this.connectionStatus = this.initStatus(reply);
         // set global param
-        this.client.ardmRedisVersion = this.connectionStatus['redis_version'];
+        this.client.ardmRedisVersion = this.connectionStatus.redis_version;
 
         // init db keys info
         if (this.isCluster) {
           this.initClusterKeys();
-        }
-        else {
+        } else {
           this.DBKeys = this.initDbKeys(this.connectionStatus);
         }
       }).catch((e) => {
@@ -312,7 +311,7 @@ export default {
         if (/^db\d+/.test(i)) {
           const array = status[i].split(',');
 
-          const keys = parseInt(array[0] ? array[0].split('=')[1]: NaN);
+          const keys = parseInt(array[0] ? array[0].split('=')[1] : NaN);
           const expires = parseInt(array[1] ? array[1].split('=')[1] : NaN);
           const avg_ttl = parseInt(array[2] ? array[2].split('=')[1] : NaN);
 
@@ -341,7 +340,7 @@ export default {
       }
 
       // get real node name in ssh+cluster, instead of local port
-      const natMap = this.client.options.natMap;
+      const { natMap } = this.client.options;
       const clusterNodeNames = {};
 
       if (natMap && Object.keys(natMap).length) {

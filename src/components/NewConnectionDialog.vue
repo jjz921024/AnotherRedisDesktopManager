@@ -1,7 +1,40 @@
 <template>
-  <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" :append-to-body='true' :close-on-click-modal='false' class='new-connection-dailog' width='90%'>
-    <!-- redis connection form -->
-    <el-form :label-position="labelPosition" label-width="90px">
+  <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" :append-to-body='true' :close-on-click-modal='false' class='new-connection-dailog' width='70%'>
+    <!-- WERedis connection form -->
+    <el-form :label-position="labelPosition" label-width="110px">
+      <!-- Cluster Name -->
+      <el-form-item label="Cluster Name" required>
+        <el-select
+          v-model="connection.clusterName"
+          placeholder="Select cluster"
+          :loading="clusterNameLoading"
+          :disabled="clusterNameLoading"
+          filterable
+          style="width: 100%">
+          <el-option
+            v-for="name in clusterNames"
+            :key="name"
+            :label="name"
+            :value="name">
+          </el-option>
+        </el-select>
+        <div v-if="clusterNameError" style="color: #f56c6c; font-size: 12px; margin-top: 4px;">
+          {{ clusterNameError }}
+        </div>
+      </el-form-item>
+
+      <!-- UM Account -->
+      <el-form-item label="UM Account" required>
+        <el-input v-model="connection.umAccount" autocomplete="off" placeholder="Enter UM account"></el-input>
+      </el-form-item>
+
+      <!-- UM Password -->
+      <el-form-item label="UM Password" required>
+        <el-input v-model="connection.umPassword" type="password" autocomplete="off" placeholder="Enter UM password"></el-input>
+      </el-form-item>
+
+      <!-- Hidden original fields -->
+      <div v-show="false">
       <el-row :gutter=20>
         <!-- left col -->
         <el-col :span=12>
@@ -36,9 +69,10 @@
           </el-form-item>
         </el-col>
       </el-row>
+      </div>
 
-      <!-- other operation -->
-      <el-form-item label="">
+      <!-- other operation - hidden for WERedis -->
+      <el-form-item label="" v-show="false">
         <el-checkbox v-model="sshOptionsShow">SSH</el-checkbox>
         <el-checkbox v-model="sslOptionsShow">SSL</el-checkbox>
         <el-checkbox v-model="sentinelOptionsShow">
@@ -225,11 +259,20 @@ export default {
           masterName: 'mymaster',
           nodePassword: '',
         },
+        weredis: false,
+        clusterName: '',
+        umAccount: '',
+        umPassword: '',
       },
       connectionEmpty: {},
       sshOptionsShow: false,
       sslOptionsShow: false,
       sentinelOptionsShow: false,
+      // WERedis specific fields
+      weredis: false,
+      clusterNames: [], // list of cluster names from API
+      clusterNameLoading: false,
+      clusterNameError: '',
     };
   },
   components: { FileInput, InputPassword },
@@ -249,8 +292,11 @@ export default {
   },
   methods: {
     show() {
+      console.log('WERedis: show() called');
       this.dialogVisible = true;
       this.resetFields();
+      // Fetch cluster names when dialog opens
+      this.fetchClusterNames();
     },
     resetFields() {
       // edit connection mode
@@ -269,27 +315,42 @@ export default {
         this.sentinelOptionsShow = false;
         this.connection = JSON.parse(JSON.stringify(this.connectionEmpty));
       }
+
+      // Reset WERedis state
+      this.clusterNameError = '';
+      // clusterNames and loading state managed by fetchClusterNames
     },
     editConnection() {
       const config = JSON.parse(JSON.stringify(this.connection));
 
-      if (this.sentinelOptionsShow && config.cluster) {
-        return this.$message.error('Sentinel & Cluster cannot be checked together!');
+      // WERedis validation
+      if (!config.clusterName) {
+        return this.$message.error('Cluster Name is required');
+      }
+      if (!config.umAccount) {
+        return this.$message.error('UM Account is required');
+      }
+      if (!config.umPassword) {
+        return this.$message.error('UM Password is required');
       }
 
+      // Mark as WERedis connection
+      config.weredis = true;
+
+      // Set defaults for hidden fields
       !config.host && (config.host = '127.0.0.1');
       !config.port && (config.port = 6379);
 
+      // Always use standalone mode (not cluster, not sentinel)
+      config.cluster = false;
+      delete config.sentinelOptions;
+
+      // Clean up SSH/SSL if not configured
       if (!this.sshOptionsShow || !config.sshOptions.host) {
         delete config.sshOptions;
       }
-
       if (!this.sslOptionsShow) {
         delete config.sslOptions;
-      }
-
-      if (!this.sentinelOptionsShow || !config.sentinelOptions.masterName) {
-        delete config.sentinelOptions;
       }
 
       const oldKey = storage.getConnectionKey(this.config);
@@ -297,6 +358,63 @@ export default {
 
       this.dialogVisible = false;
       this.$emit('editConnectionFinished', config);
+    },
+    // WERedis: Fetch cluster names from API (using Node.js http to bypass CORS)
+    async fetchClusterNames() {
+      console.log('WERedis: fetchClusterNames called');
+      this.clusterNameLoading = true;
+      this.clusterNameError = '';
+      this.clusterNames = [];
+
+      try {
+        const http = require('http');
+        const url = 'http://10.107.120.69:19999/api/weredis/getAllClusterNames';
+
+        const data = await new Promise((resolve, reject) => {
+          const timeoutId = setTimeout(() => {
+            reject(new Error('Connection timeout'));
+          }, 5000);
+
+          http.get(url, (res) => {
+            let rawData = '';
+            res.on('data', (chunk) => { rawData += chunk; });
+            res.on('end', () => {
+              clearTimeout(timeoutId);
+              try {
+                resolve(JSON.parse(rawData));
+              } catch (e) {
+                reject(new Error('Invalid JSON response'));
+              }
+            });
+          }).on('error', (e) => {
+            clearTimeout(timeoutId);
+            reject(e);
+          });
+        });
+
+        console.log('WERedis: API response:', data);
+
+        // Handle different response formats
+        let clusterList = [];
+        if (Array.isArray(data.resultData)) {
+          clusterList = data.resultData;
+        } else if (Array.isArray(data.result)) {
+          clusterList = data.result;
+        } else if (Array.isArray(data.data)) {
+          clusterList = data.data;
+        } else {
+          throw new Error(data.msg || 'Invalid response format - expected array');
+        }
+
+        this.clusterNames = clusterList;
+        console.log('WERedis: clusterNames set to:', this.clusterNames);
+      } catch (error) {
+        console.error('WERedis: Failed to fetch cluster names:', error);
+        this.clusterNameError = `Failed to fetch cluster names: ${error.message}`;
+        this.clusterNames = [];
+      } finally {
+        this.clusterNameLoading = false;
+      }
     },
   },
   mounted() {

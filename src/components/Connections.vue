@@ -57,9 +57,7 @@ export default {
         return this.connections;
       }
 
-      return this.connections.filter(item => {
-        return item.name.toLowerCase().includes(this.filterMode.toLowerCase());
-      });
+      return this.connections.filter(item => item.name.toLowerCase().includes(this.filterMode.toLowerCase()));
     },
   },
   methods: {

@@ -154,43 +154,99 @@ export default {
         });
       }, this.pingInterval);
     },
-    getRedisClient(config) {
-      // prevent changing back to raw config, such as config.db
-      const configCopy = JSON.parse(JSON.stringify(config));
-      // select db
-      configCopy.db = this.lastSelectedDb;
+    // WERedis: Fetch proxy address from API (using Node.js http to bypass CORS)
+    async fetchWERedisProxyAddress(clusterName) {
+      const http = require('http');
+      const url = `http://10.107.117.44:19091/redis_observer/proxy_online_list?clusterName=${encodeURIComponent(clusterName)}`;
 
-      // ssh client
-      if (configCopy.sshOptions) {
-        var clientPromise = redisClient.createSSHConnection(
-          configCopy.sshOptions, configCopy.host, configCopy.port, configCopy.auth, configCopy,
-        );
-      }
-      // normal client
-      else {
-        var clientPromise = redisClient.createConnection(
-          configCopy.host, configCopy.port, configCopy.auth, configCopy,
-        );
-      }
+      const data = await new Promise((resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+          reject(new Error('Connection timeout when fetching proxy address'));
+        }, 5000);
 
-      clientPromise.then((client) => {
-        this.client = client;
-
-        client.on('error', (error) => {
-          this.$message.error({
-            message: `Client On Error: ${error} Config right?`,
-            duration: 3000,
-            customClass: 'redis-on-error-message',
+        http.get(url, (res) => {
+          let rawData = '';
+          res.on('data', (chunk) => { rawData += chunk; });
+          res.on('end', () => {
+            clearTimeout(timeoutId);
+            try {
+              resolve(JSON.parse(rawData));
+            } catch (e) {
+              reject(new Error('Invalid JSON response'));
+            }
           });
-
-          this.$bus.$emit('closeConnection');
+        }).on('error', (e) => {
+          clearTimeout(timeoutId);
+          reject(e);
         });
-      }).catch((error) => {
-        this.$message.error(error.message);
-        this.$bus.$emit('closeConnection');
       });
 
-      return clientPromise;
+      if (!data.result || !Array.isArray(data.result) || data.result.length === 0) {
+        throw new Error('No available proxies');
+      }
+
+      // Use first proxy
+      const proxy = data.result[0];
+      if (!proxy.host || !proxy.port) {
+        throw new Error('Invalid proxy configuration');
+      }
+
+      return { host: proxy.host, port: proxy.port };
+    },
+    getRedisClient(config) {
+      return new Promise(async (resolve, reject) => {
+        // prevent changing back to raw config, such as config.db
+        const configCopy = JSON.parse(JSON.stringify(config));
+        // select db
+        configCopy.db = this.lastSelectedDb;
+
+        // WERedis connection: fetch proxy address first
+        if (configCopy.weredis && configCopy.clusterName) {
+          try {
+            const proxy = await this.fetchWERedisProxyAddress(configCopy.clusterName);
+            configCopy.host = proxy.host;
+            configCopy.port = proxy.port;
+            configCopy.auth = `${configCopy.umAccount}:GUI|||${configCopy.umPassword}`;
+            console.log(`WERedis: Using proxy ${proxy.host}:${proxy.port} for cluster ${configCopy.clusterName}`);
+          } catch (error) {
+            this.$message.error(error.message);
+            this.$refs.operateItem.searchIcon = 'el-icon-search';
+            return reject(error);
+          }
+        }
+
+        // ssh client
+        if (configCopy.sshOptions) {
+          var clientPromise = redisClient.createSSHConnection(
+            configCopy.sshOptions, configCopy.host, configCopy.port, configCopy.auth, configCopy,
+          );
+        }
+        // normal client
+        else {
+          var clientPromise = redisClient.createConnection(
+            configCopy.host, configCopy.port, configCopy.auth, configCopy,
+          );
+        }
+
+        clientPromise.then((client) => {
+          this.client = client;
+
+          client.on('error', (error) => {
+            this.$message.error({
+              message: `Client On Error: ${error} Config right?`,
+              duration: 3000,
+              customClass: 'redis-on-error-message',
+            });
+
+            this.$bus.$emit('closeConnection');
+          });
+        }).catch((error) => {
+          this.$message.error(error.message);
+          this.$bus.$emit('closeConnection');
+        });
+
+        resolve(clientPromise);
+      });
     },
     setColor(color, save = true) {
       const ulDom = this.$refs.connectionMenu.$el;

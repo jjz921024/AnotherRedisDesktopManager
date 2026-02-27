@@ -186,7 +186,7 @@ export default {
       return {
         system: this.$t('message.theme_system'),
         light: this.$t('message.theme_light'),
-        dark: this.$t('message.theme_dark')
+        dark: this.$t('message.theme_dark'),
       };
     },
   },
@@ -199,7 +199,7 @@ export default {
       this.form = { ...this.form, ...settings };
 
       // theme
-      let theme = localStorage.theme;
+      let { theme } = localStorage;
       if (!Object.keys(this.themeList).includes(theme)) {
         theme = 'system';
       }

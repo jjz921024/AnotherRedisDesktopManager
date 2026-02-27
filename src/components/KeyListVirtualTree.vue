@@ -58,7 +58,9 @@
       <!-- folder right menu -->
       <ul v-if="!rightClickNode.isLeaf">
         <li @click='clickItem("multiple_select")'>{{ $t('message.multiple_select') }}</li>
+        <!-- Hidden for WERedis
         <li @click='clickItem("memory_analysis")'>{{ $t('message.memory_analysis') }}</li>
+        -->
         <li @click='clickItem("load_cur_folder")'>{{ $t('message.load_current_folder') }}</li>
         <li @click='clickItem("delete_folder")'>{{ $t('message.delete_folder') }}</li>
       </ul>
@@ -263,8 +265,7 @@ export default {
           if (!this.multiOperating) {
             this.$refs.veTree.setChecked(this.rightClickNode.key, true);
             this.showMultiSelect();
-          }
-          else {
+          } else {
             this.exportBatch();
           }
 

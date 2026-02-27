@@ -105,6 +105,12 @@ export default {
     connection.name = name;
   },
   getConnectionName(connection) {
+    // WERedis connection: show as "clusterPrefix (umAccount)"
+    if (connection.weredis && connection.clusterName) {
+      const parts = connection.clusterName.split('_');
+      const shortName = parts.length >= 2 ? `${parts[0]}_${parts[1]}` : connection.clusterName;
+      return connection.umAccount ? `${shortName} (${connection.umAccount})` : shortName;
+    }
     return connection.name || `${connection.host}@${connection.port}`;
   },
   setConnections(connections) {

@@ -53,12 +53,14 @@
           </el-dropdown-item>
         </el-tooltip>
 
+        <!-- Hidden for WERedis
         <el-dropdown-item @click.native='memoryAnalisys'>
           <span><i class='more-operate-ico fa fa-table'></i>&nbsp;{{ $t('message.memory_analysis') }}</span>
         </el-dropdown-item>
         <el-dropdown-item @click.native='slowLog'>
           <span><i class='more-operate-ico fa fa-hourglass-start'></i>&nbsp;{{ $t('message.slow_log') }}</span>
         </el-dropdown-item>
+        -->
         <el-dropdown-item @click.native='importKeys' divided>
           <span><i class='more-operate-ico el-icon-download'></i>&nbsp;{{ $t('message.import') }} Key</span>
         </el-dropdown-item>
@@ -344,8 +346,7 @@ export default {
           }).finally(() => {
             this.$set(this.$refs.importCMDNotify,
               'innerHTML',
-              `Succ: ${succ.length}, Fail: ${fail.length}`
-            );
+              `Succ: ${succ.length}, Fail: ${fail.length}`);
           });
         });
 

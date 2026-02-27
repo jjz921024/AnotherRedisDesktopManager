@@ -167,7 +167,7 @@ export default {
         }), {
           inputValidator: value => ((value == inputTxt) ? true : placeholder),
           inputPlaceholder: placeholder,
-        }
+        },
       ).then(() => {
         this.client.rename(this.redisKey, this.keyName).then((reply) => {
           if (reply === 'OK') {
