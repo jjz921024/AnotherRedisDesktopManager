@@ -173,6 +173,14 @@ const en = {
     theme_system: 'System',
     theme_light: 'Light',
     theme_dark: 'Dark',
+    expire: 'Expire',
+    version: 'Version',
+    never_expire: 'Never',
+    not_exist: 'Not Exist',
+    seconds: 's',
+    minutes: 'm',
+    hours: 'h',
+    days: 'd',
   },
 };
 

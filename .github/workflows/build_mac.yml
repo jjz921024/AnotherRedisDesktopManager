@@ -1,6 +1,10 @@
 name: build_mac
 
 on:
+  workflow_dispatch:
+  push:
+    branches:
+      - wb
   release:
     types: [published]
 
@@ -10,7 +14,7 @@ jobs:
     runs-on: macos-latest
 
     env:
-      GH_TOKEN: ${{secrets.GH_TOKEN}}
+      # GH_TOKEN: ${{secrets.GH_TOKEN}}
       CSC_LINK: ${{secrets.CSC_LINK}}
       CSC_KEY_PASSWORD: ${{secrets.CSC_KEY_PASSWORD}}
       APPLEID: ${{secrets.APPLEID}}
@@ -32,7 +36,7 @@ jobs:
     - run: npm ci
     - run: npm run pack:prepare
     # - run: npm run pack:macm1:publish
-    - run: npm run pack:mac:publish
+    - run: npm run pack:mac
 
     - name: Cleanup keychain
       if: always()
@@ -40,3 +44,11 @@ jobs:
       run: |
         # Don't fail if the keychain doesn't exist.
         security delete-keychain signing_temp.keychain || true
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: mac-build
+        path: |
+          dist/build-apps/*.dmg
+        retention-days: 30

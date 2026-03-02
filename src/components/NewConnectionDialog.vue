@@ -368,7 +368,9 @@ export default {
 
       try {
         const http = require('http');
-        const url = 'http://10.107.120.69:19999/api/weredis/getAllClusterNames';
+        const adminHost = '10.107.120.69:19999';
+        //const adminHost = '127.0.0.1:18080';
+        const url = `http://${adminHost}/api/weredis/getAllClusterNames`;
 
         const data = await new Promise((resolve, reject) => {
           const timeoutId = setTimeout(() => {

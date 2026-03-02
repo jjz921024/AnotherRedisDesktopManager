@@ -111,6 +111,8 @@ export default {
           }
 
           client.readyInited = true;
+          // WERedis: execute custom command after connection ready
+          this.executeWERedisInitCommand(client);
           // open status tab
           this.$bus.$emit('openStatus', client, this.config.connectionName);
           this.startPingInterval();
@@ -122,8 +124,20 @@ export default {
 
       // connection is ready
       else {
+        // WERedis: execute custom command after connection ready
+        this.executeWERedisInitCommand(client);
         this.initShow();
         callback && callback();
+      }
+    },
+    // WERedis: execute initialization command
+    executeWERedisInitCommand(client) {
+      if (this.config.weredis) {
+        client.call('SCAN', 'ENABLE').then((reply) => {
+          console.log('WERedis: SCAN ENABLE executed successfully:', reply);
+        }).catch((err) => {
+          console.error('WERedis: Failed to execute SCAN ENABLE:', err);
+        });
       }
     },
     closeConnection(connectionName) {
@@ -157,7 +171,9 @@ export default {
     // WERedis: Fetch proxy address from API (using Node.js http to bypass CORS)
     async fetchWERedisProxyAddress(clusterName) {
       const http = require('http');
-      const url = `http://10.107.117.44:19091/redis_observer/proxy_online_list?clusterName=${encodeURIComponent(clusterName)}`;
+      const obHost = '10.107.117.44:19091';
+      //const obHost = '127.0.0.1:18080';
+      const url = `http://${obHost}/redis_observer/proxy_online_list?clusterName=${encodeURIComponent(clusterName)}`;
 
       const data = await new Promise((resolve, reject) => {
         const timeoutId = setTimeout(() => {
@@ -206,7 +222,7 @@ export default {
             const proxy = await this.fetchWERedisProxyAddress(configCopy.clusterName);
             configCopy.host = proxy.host;
             configCopy.port = proxy.port;
-            configCopy.auth = `${configCopy.umAccount}:GUI|||${configCopy.umPassword}`;
+            configCopy.auth = `${configCopy.umAccount}|||${configCopy.umPassword}`;
             console.log(`WERedis: Using proxy ${proxy.host}:${proxy.port} for cluster ${configCopy.clusterName}`);
           } catch (error) {
             this.$message.error(error.message);

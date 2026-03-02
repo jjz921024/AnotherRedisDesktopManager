@@ -35,6 +35,8 @@ import KeyContentZset from '@/components/contents/KeyContentZset';
 import KeyContentList from '@/components/contents/KeyContentList';
 import KeyContentStream from '@/components/contents/KeyContentStream';
 import KeyContentReJson from '@/components/contents/KeyContentReJson';
+import KeyContentTairHash from '@/components/contents/KeyContentTairHash';
+import KeyContentTairString from '@/components/contents/KeyContentTairString';
 
 export default {
   data() {
@@ -50,6 +52,8 @@ export default {
     KeyContentList,
     KeyContentStream,
     KeyContentReJson,
+    KeyContentTairHash,
+    KeyContentTairString,
   },
   computed: {
     componentName() {
@@ -68,6 +72,8 @@ export default {
         'ReJSON-RL': 'KeyContentReJson',
         json: 'KeyContentReJson', // upstash
         'tair-json': 'KeyContentReJson', // tair
+        'tairhash-': 'KeyContentTairHash',
+        'exstrtype': 'KeyContentTairString',
       };
 
       if (map[keyType]) {

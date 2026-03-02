@@ -173,6 +173,14 @@ const cn = {
     theme_system: '跟随系统',
     theme_light: '亮色模式',
     theme_dark: '暗色模式',
+    expire: '过期时间',
+    version: '版本',
+    never_expire: '永不过期',
+    not_exist: '不存在',
+    seconds: '秒',
+    minutes: '分',
+    hours: '小时',
+    days: '天',
   },
 };
 

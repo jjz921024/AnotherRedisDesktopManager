@@ -3,30 +3,9 @@
   <el-form class="connection-form" size="mini">
     <el-form-item>
       <el-row :gutter="6">
-        <!-- db index select -->
-        <el-col :span="12">
-          <el-select class="db-select" v-model="selectedDbIndex" placeholder="DB" @change="changeDb()" :filter-method="filterDbCustomName" @visible-change="revertDbFilter" filterable default-first-option>
-            <el-option
-              v-for="index in dbsCopy"
-              :key="index"
-              :label="`DB${index}`"
-              :value="index">
-              <span>
-                {{`DB${index}`}}
-                <span class="db-select-key-count" v-if="dbKeysCount[index]">[{{dbKeysCount[index]}}]</span>
-                <span class="db-select-custom-name">
-                  <span class="db-select-key-count">{{dbNames[index]}}</span>
-
-                  <span class="el-icon-edit-outline" @click.stop.prevent='customDbName(index)'></span>
-                </span>
-              </span>
-            </el-option>
-            <!-- <span slot="prefix" class="fa fa-sitemap" style="font-size: 80%"></span> -->
-          </el-select>
-        </el-col>
 
         <!-- new key btn -->
-        <el-col :span="12">
+        <el-col :span="24">
           <el-button class="new-key-btn" @click="newKeyDialog=true">
             <i class="el-icon-plus"></i>
             {{ $t('message.add_new_key') }}
