@@ -223,6 +223,7 @@ export default {
             configCopy.host = proxy.host;
             configCopy.port = proxy.port;
             configCopy.auth = `${configCopy.umAccount}|||${configCopy.umPassword}`;
+            //configCopy.auth = 'wb6Cluster';
             console.log(`WERedis: Using proxy ${proxy.host}:${proxy.port} for cluster ${configCopy.clusterName}`);
           } catch (error) {
             this.$message.error(error.message);

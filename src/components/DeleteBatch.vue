@@ -135,52 +135,21 @@ export default {
       this.loadingDelete = true;
       let delPromise = null;
 
-      // standalone Redis, batch delete
-      if (!this.client.nodes) {
-        let chunked = [];
-        for (let i = 0; i < total; i++) {
-          chunked.push(keys[i].key);
-
-          // del 5000 keys one time
-          if (chunked.length >= 5000) {
-            delPromise = this.client.del(chunked);
-            chunked = [];
-          }
-        }
-
-        if (chunked.length) {
-          delPromise = this.client.del(chunked);
-        }
-        // use final promise
-        delPromise.then((reply) => {
-          if (reply > 0) {
-            this.afterDelete();
-          } else {
-            this.deleteFailed(this.$t('message.delete_failed'));
-          }
-        }).catch((e) => {
-          this.deleteFailed(e.message);
-        });
+      for (let i = 0; i < total; i++) {
+        delPromise = this.client.del(keys[i].key);
+        delPromise.catch((e) => {});
       }
 
-      // cluster, one key per time instead of batch
-      else {
-        for (let i = 0; i < total; i++) {
-          delPromise = this.client.del(keys[i].key);
-          delPromise.catch((e) => {});
+      // use final promise
+      delPromise.then((reply) => {
+        if (reply === 1) {
+          this.afterDelete();
+        } else {
+          this.deleteFailed(this.$t('message.delete_failed'));
         }
-
-        // use final promise
-        delPromise.then((reply) => {
-          if (reply == 1) {
-            this.afterDelete();
-          } else {
-            this.deleteFailed(this.$t('message.delete_failed'));
-          }
-        }).catch((e) => {
-          this.deleteFailed(e.message);
-        });
-      }
+      }).catch((e) => {
+        this.deleteFailed(e.message);
+      });
     },
     afterDelete() {
       this.loadingDelete = false;

@@ -4,11 +4,17 @@
     <el-form-item>
       <el-row :gutter="6">
 
-        <!-- new key btn -->
-        <el-col :span="24">
+        <!-- new key btn & flush btn -->
+        <el-col :span="12">
           <el-button class="new-key-btn" @click="newKeyDialog=true">
             <i class="el-icon-plus"></i>
             {{ $t('message.add_new_key') }}
+          </el-button>
+        </el-col>
+        <el-col :span="12">
+          <el-button class="flush-btn" type="danger" @click="confirmFlushDB">
+            <i class="el-icon-delete"></i>
+            {{ $t('message.flushdb') }}
           </el-button>
         </el-col>
       </el-row>
@@ -276,6 +282,50 @@ export default {
 
       this.newKeyDialog = false;
     },
+    confirmFlushDB() {
+      if (!this.client) {
+        return;
+      }
+
+      const db = this.client.condition ? this.client.condition.select : 0;
+      this.$confirm(this.$t('message.confirm_flush_db', { db }), {
+        type: 'warning',
+      }).then(() => {
+        this.flushDBByScan();
+      }).catch(() => {});
+    },
+    async flushDBByScan() {
+      const loading = this.$loading({ text: this.$t('message.flushing') });
+      let cursor = '0';
+      let deletedCount = 0;
+
+      try {
+        do {
+          // Scan for keys (batch of 500)
+          const reply = await this.client.scan(cursor, 'COUNT', 500);
+          const [nextCursor, keys] = reply;
+          cursor = nextCursor;
+
+          // Delete keys if any found
+          if (keys.length > 0) {
+            await this.client.del(keys);
+            deletedCount += keys.length;
+
+            // Sleep 1 second after every 1000 keys to prevent high TPS
+            if (deletedCount % 1000 < keys.length && cursor !== '0') {
+              await new Promise(resolve => setTimeout(resolve, 200));
+            }
+          }
+        } while (cursor !== '0');
+
+        loading.close();
+        this.$message.success(`${this.$t('message.delete_success')} (${deletedCount})`);
+        this.$bus.$emit('refreshKeyList', this.client);
+      } catch (e) {
+        loading.close();
+        this.$message.error(e.message);
+      }
+    },
     setDefaultValue(key, type) {
       switch (type) {
         case 'string': {
@@ -398,6 +448,9 @@ export default {
     height: 28px;
   }
   .connection-menu .new-key-btn {
+    width: 100%;
+  }
+  .connection-menu .flush-btn {
     width: 100%;
   }
   .connection-menu .search-item {
