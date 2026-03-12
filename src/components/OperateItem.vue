@@ -306,15 +306,13 @@ export default {
           const [nextCursor, keys] = reply;
           cursor = nextCursor;
 
-          // Delete keys if any found
-          if (keys.length > 0) {
-            await this.client.del(keys);
-            deletedCount += keys.length;
+          // Delete keys one by one
+          for (const key of keys) {
+            await this.client.del(key);
+          }
 
-            // Sleep 1 second after every 1000 keys to prevent high TPS
-            if (deletedCount % 1000 < keys.length && cursor !== '0') {
-              await new Promise(resolve => setTimeout(resolve, 200));
-            }
+          if (keys.length > 0) {
+            await new Promise(resolve => setTimeout(resolve, 50));
           }
         } while (cursor !== '0');
 
